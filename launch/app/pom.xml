@@ -42,14 +42,12 @@
       <scope>runtime</scope>
     </dependency>
 
-<!-- uncomment this and add the name of your binding that you want to work on
     <dependency>
       <groupId>org.openhab.addons.bundles</groupId>
-      <artifactId>org.openhab.binding.YOURBINDINGNAME</artifactId>
+      <artifactId>org.openhab.persistence.rrd4j</artifactId>
       <version>${project.version}</version>
       <scope>runtime</scope>
     </dependency>
--->
 
 <!-- uncomment this if you want to work on the Zigbee binding
     <dependency>

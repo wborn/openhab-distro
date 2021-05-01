@@ -64,7 +64,8 @@ feature.openhab-model-runtime-all: \
 	bnd.identity;id='org.openhab.ui.basic',\
 	bnd.identity;id='org.openhab.ui.iconset.classic',\
 	bnd.identity;id='org.apache.aries.jax.rs.whiteboard',\
-	bnd.identity;id='org.ops4j.pax.web.pax-web-extender-whiteboard'
+	bnd.identity;id='org.ops4j.pax.web.pax-web-extender-whiteboard',\
+	bnd.identity;id='org.openhab.persistence.rrd4j'
 
 -runfw: org.eclipse.osgi
 
@@ -272,4 +273,5 @@ feature.openhab-model-runtime-all: \
 	org.objectweb.asm.tree.analysis;version='[9.0.0,9.0.1)',\
 	org.objectweb.asm.util;version='[9.0.0,9.0.1)',\
 	org.osgi.service.cm;version='[1.6.0,1.6.1)',\
-	stax2-api;version='[4.2.1,4.2.2)'
+	stax2-api;version='[4.2.1,4.2.2)',\
+	org.openhab.persistence.rrd4j;version='[3.1.0,3.1.1)'
