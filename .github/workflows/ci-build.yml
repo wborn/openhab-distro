@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'multi-os'
     paths-ignore:
       - '.github/**/*.md'
   pull_request:
@@ -19,21 +20,25 @@ jobs:
       fail-fast: false
       matrix:
         java: [ '21' ]
-        os: [ 'ubuntu-24.04' ]
+        os: [ 'macos-26', 'ubuntu-24.04', 'windows-2025' ]
+        include:
+          - primary: false
+          - java: '21'
+            os: 'ubuntu-24.04'
+            primary: true
     name: Build (Java ${{ matrix.java }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     # typical duration is ~6min, set twice the amount as limit (default is 6h)
     timeout-minutes: 15
     steps:
-      - name: Checkout
-        if: github.head_ref == ''
-        uses: actions/checkout@v7
+      - name: Set up line endings
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol crlf
 
-      - name: Checkout merge
-        if: github.head_ref != ''
+      - name: Checkout
         uses: actions/checkout@v7
-        with:
-          ref: refs/pull/${{github.event.pull_request.number}}/merge
 
       - name: Set up Cache
         uses: actions/cache@v6
@@ -53,7 +58,9 @@ jobs:
 
       - name: Build
         id: build
-        run: './.github/scripts/maven-build'
+        run: |
+          javac .github/java/MavenBuild.java
+          java -cp .github/java MavenBuild
         env:
           MAVEN_OPTS: >-
             -Xmx2g
@@ -61,24 +68,39 @@ jobs:
             -Dmaven.wagon.httpconnectionManager.ttlSeconds=25
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
+      - name: Prepare Uploads
+        id: prepare-uploads
+        if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.build.outcome == 'failure') }}
+        shell: bash
+        run: |
+          uploads="$RUNNER_TEMP/uploads"
+          mkdir -p "${uploads}"
+
+          if [[ -f build.log ]]; then
+            cp build.log "${uploads}/build-log-java-${{ matrix.java }}-${{ matrix.os }}.txt"
+            echo "build-log=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload Build Log
-        if: ${{ always() && ((steps.build.outcome == 'success') || (steps.build.outcome == 'failure')) }}
+        if: ${{ !cancelled() && steps.prepare-uploads.outputs.build-log == 'true' }}
         uses: actions/upload-artifact@v7
         with:
-          name: build-log-java-${{ matrix.java }}-${{ matrix.os }}
-          path: build.log
+          path: ${{ runner.temp }}/uploads/build-log-java-${{ matrix.java }}-${{ matrix.os }}.txt
+          archive: false
+          if-no-files-found: error
 
       # this will identify modifications to files under source control during the workflow run;
       # untracked files will be included as well!
       - name: Verify Changed Files
         id: verify-changed-files
+        if: ${{ !cancelled() }}
         run: |
           set -o pipefail
-          changed_files=$(echo -n "$(git diff --name-only HEAD && git ls-files --others --exclude-standard)"|tr '\n' ' ')
+          changed_files=$(echo -n "$(git diff --name-only HEAD && git ls-files --others --exclude-standard)" | tr '\n' ' ')
           echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
 
       - name: Fail on Changed Files
-        if: steps.verify-changed-files.outputs.changed_files != ''
+        if: ${{ !cancelled() && steps.verify-changed-files.outputs.changed_files != '' }}
         env:
           CHANGED_FILES: ${{ steps.verify-changed-files.outputs.changed_files }}
         run: |
