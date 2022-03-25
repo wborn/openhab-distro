@@ -2,7 +2,9 @@
 .idea
 .vscode
 .DS_Store
+*.class
 *.iml
+*.log
 .gradle
 maven-metadata-local.xml
 Californium.properties
