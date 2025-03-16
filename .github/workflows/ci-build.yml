@@ -72,9 +72,19 @@ jobs:
           name: build-log-java-${{ matrix.java }}-${{ matrix.os }}
           path: build.log
 
+      - name: Change Files
+        run: |
+          echo modification >> CONTRIBUTING.md
+          touch new-file
+          mkdir new-dir
+          touch new-dir/new-file
+          rm README.md
+
       - name: Verify Changed Files
-        uses: tj-actions/verify-changed-files@v20
         id: verify-changed-files
+        run: |
+          changed_files=$((git diff --name-only ${{ github.sha }}; git ls-files --others --exclude-standard) | tr '\n' ' ')
+          echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
 
       - name: Fail on Changed Files
         if: steps.verify-changed-files.outputs.changed_files != ''
