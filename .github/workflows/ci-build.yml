@@ -72,6 +72,14 @@ jobs:
           name: build-log-java-${{ matrix.java }}-${{ matrix.os }}
           path: build.log
 
+      - name: Change Files
+        run: |
+          echo modification >> CONTRIBUTING.md
+          touch new-file
+          mkdir new-dir
+          touch new-dir/new-file
+          rm README.md
+
       - name: Verify Changed Files
         id: verify-changed-files
         run: |
