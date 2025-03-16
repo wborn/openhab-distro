@@ -83,7 +83,7 @@ jobs:
       - name: Verify Changed Files
         id: verify-changed-files
         run: |
-          changed_files=$(git diff --name-only ${{ github.sha }}; git ls-files --others --exclude-standard | tr '\n' ' ')
+          changed_files=$((git diff --name-only ${{ github.sha }}; git ls-files --others --exclude-standard) | tr '\n' ' ')
           echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
 
       - name: Fail on Changed Files
