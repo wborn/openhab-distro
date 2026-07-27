@@ -59,8 +59,7 @@ jobs:
       - name: Build
         id: build
         run: |
-          javac .github/java/MavenBuild.java
-          java -cp .github/java MavenBuild
+          java .github/java/MavenBuildRunner.java --heading "Building all projects"
         env:
           MAVEN_OPTS: >-
             -Xmx2g
@@ -89,20 +88,25 @@ jobs:
           archive: false
           if-no-files-found: error
 
-      # this will identify modifications to files under source control during the workflow run;
-      # untracked files will be included as well!
-      - name: Verify Changed Files
-        id: verify-changed-files
+      - name: Verify Clean Working Tree
         if: ${{ !cancelled() }}
+        shell: bash
         run: |
-          set -o pipefail
-          changed_files=$(echo -n "$(git diff --name-only HEAD && git ls-files --others --exclude-standard)" | tr '\n' ' ')
-          echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
+          changes=$(git status --porcelain=v1 --untracked-files=all)
 
-      - name: Fail on Changed Files
-        if: ${{ !cancelled() && steps.verify-changed-files.outputs.changed_files != '' }}
-        env:
-          CHANGED_FILES: ${{ steps.verify-changed-files.outputs.changed_files }}
-        run: |
-          echo "::error::Files have changed: $CHANGED_FILES"
-          exit 1
+          if [[ -n "$changes" ]]; then
+            count=$(printf '%s\n' "$changes" | wc -l)
+            count=${count//[[:space:]]/}
+          else
+            count=0
+          fi
+
+          echo "Found $count changed files."
+          echo "::group::Changed files ($count)"
+          printf '%s\n' "${changes:-No changed files found.}"
+          echo "::endgroup::"
+
+          if [[ -n "$changes" ]]; then
+            echo "::error::Build changed or created $count file(s)"
+            exit 1
+          fi
